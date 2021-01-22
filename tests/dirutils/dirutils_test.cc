@@ -228,11 +228,17 @@ TEST_F(IoTest, getcwd) {
 #ifdef WIN32
 TEST_F(IoTest, mkdirp_longpaths){
 	#ifdef _UNICODE
-	std::cout << " unicode compiled!!!!!! " << std::endl;
+	std::cout << " _unicode true " << std::endl;
+	#endif	
+
+        #ifdef UNICODE
+	std::cout << " unicode true " << std::endl;
 	#endif	
 	
 	#pragma message("_MSC_VER      is " _CRT_STRINGIZE(_MSC_VER))
+        #pragma message("stat      is " _CRT_STRINGIZE(stat))
         #pragma message("CreateFile      is " _CRT_STRINGIZE(CreateFile))
+        #pragma message("GetFileAttributes      is " _CRT_STRINGIZE(GetFileAttributes))
 
 	std::string path = "a";
 	for(int i =0 ; i < 4; i++) {
@@ -250,7 +256,6 @@ TEST_F(IoTest, mkdirp_longpaths){
 	}
 	
 
-
 	// mkdirp
 	EXPECT_THROW(cb::io::mkdirp(path), std::runtime_error);
 	EXPECT_NO_THROW(cb::io::mkdirp(longPath));
@@ -258,6 +263,12 @@ TEST_F(IoTest, mkdirp_longpaths){
 	// isDirectory
 	EXPECT_FALSE(cb::io::isDirectory(path));
 	EXPECT_TRUE(cb::io::isDirectory(longPath));
+
+        // stat call
+	struct stat st;
+        std::cout << " stat call path =  " << stat(path.c_str(), &st) << std::endl;
+        std::cout << " stat call short path =  " << stat("a", &st) << std::endl;
+        std::cout << " stat call longPath =  " << stat(longPath.c_str(), &st) << std::endl;
 
 	// create file for further tests
         std::ofstream fileStream(longFilePath);
