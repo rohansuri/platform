@@ -26,6 +26,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <boost/filesystem.hpp>
 #include <vector>
 #include <system_error>
 
@@ -223,6 +224,64 @@ TEST_F(IoTest, getcwd) {
     // empty ;-)
     ASSERT_FALSE(cwd.empty());
 }
+
+#ifdef WIN32
+TEST_F(IoTest, mkdirp_longpaths){
+	#ifdef _UNICODE
+	std::cout << " unicode compiled!!!!!! " << std::endl;
+	#endif	
+	
+	#pragma message("_MSC_VER      is " _CRT_STRINGIZE(_MSC_VER))
+        #pragma message("CreateFile      is " _CRT_STRINGIZE(CreateFile))
+
+	std::string path = "a";
+	for(int i =0 ; i < 4; i++) {
+		path += PATH_SEPARATOR + std::string(100, 'a');
+	}
+	const auto longPath = "\\\\?\\" + boost::filesystem::absolute(path).string();
+	std::cout << "path = " << path << std::endl;
+        std::cout << "long path = " << longPath  << std::endl;
+        const auto filePath = path + PATH_SEPARATOR + "file";
+        const auto longFilePath = longPath + PATH_SEPARATOR + "file";
+	// clean up any previous test runs.	
+        auto testRoot = "\\\\?\\" + boost::filesystem::absolute("a").string();
+        if(cb::io::isDirectory(testRoot)){
+		cb::io::rmrf(testRoot);
+	}
+	
+
+
+	// mkdirp
+	EXPECT_THROW(cb::io::mkdirp(path), std::runtime_error);
+	EXPECT_NO_THROW(cb::io::mkdirp(longPath));
+
+	// isDirectory
+	EXPECT_FALSE(cb::io::isDirectory(path));
+	EXPECT_TRUE(cb::io::isDirectory(longPath));
+
+	// create file for further tests
+        std::ofstream fileStream(longFilePath);
+        ASSERT_FALSE(fileStream.fail());
+        fileStream.close();
+        ASSERT_FALSE(fileStream.fail());
+
+	// isFile
+	EXPECT_FALSE(cb::io::isFile(filePath));
+	EXPECT_TRUE(cb::io::isFile(longFilePath));
+
+	// findFilesWithPrefix
+        ASSERT_EQ(0, cb::io::findFilesWithPrefix(path, "file").size());
+        ASSERT_EQ(1, cb::io::findFilesWithPrefix(longPath, "file").size());
+
+        // findFilesContaining
+        ASSERT_EQ(0, cb::io::findFilesContaining(path, "file").size());
+        ASSERT_EQ(1, cb::io::findFilesContaining(longPath, "file").size());
+
+	// rmrf
+        EXPECT_THROW(cb::io::rmrf(path), std::runtime_error);
+	EXPECT_NO_THROW(cb::io::rmrf(longPath));
+}
+#endif
 
 TEST_F(IoTest, mkdirp) {
     std::string path{"/it/would/suck/if/I/could/create/this"};
