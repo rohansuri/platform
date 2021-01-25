@@ -40,6 +40,22 @@
 #include <cinttypes>
 #include <limits>
 #include <system_error>
+#include <iostream>
+
+static boost::filesystem::path makeLongPath(const std::string& path){
+       boost::filesystem::path bp = path;
+       #ifdef _MSC_VER
+       if(bp.is_relative()){
+               bp = boost::filesystem::absolute(bp);
+       }
+       const auto prefix = R"(\\?\)";
+       if(path.length() > MAX_PATH && path.rfind(prefix, 0) == std::string::npos) {
+               bp = prefix + bp.string();
+       }
+       #endif
+       return bp;
+}
+
 
 static std::string split(const std::string& input, bool directory) {
     std::string::size_type path = input.find_last_of("\\/");
@@ -88,10 +104,12 @@ std::vector<std::string> cb::io::findFilesWithPrefix(const std::string &dir,
                                                      const std::string &name)
 {
     std::vector<std::string> files;
-    std::string match = dir + "\\" + name + "*";
+	auto ldir = makeLongPath(dir);
+    auto match = ldir / (name + "*");
+	std::cout << "match = " << match.string() << std::endl;
     WIN32_FIND_DATA FindFileData;
 
-    HANDLE hFind = FindFirstFileEx(match.c_str(), FindExInfoStandard,
+    HANDLE hFind = FindFirstFileExW(match.c_str(), FindExInfoStandard,
                                    &FindFileData, FindExSearchNameMatch,
                                    NULL, 0);
 
@@ -152,10 +170,11 @@ std::vector<std::string> cb::io::findFilesContaining(const std::string &dir,
         return {};
     }
     std::vector<std::string> files;
-    std::string match = dir + "\\*" + name + "*";
+	auto ldir = makeLongPath(dir);
+    auto match = ldir / ("*" + name + "*");
     WIN32_FIND_DATA FindFileData;
 
-    HANDLE hFind = FindFirstFileEx(match.c_str(), FindExInfoStandard,
+    HANDLE hFind = FindFirstFileExW(match.c_str(), FindExInfoStandard,
                                    &FindFileData, FindExSearchNameMatch,
                                    NULL, 0);
 
