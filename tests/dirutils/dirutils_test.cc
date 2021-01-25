@@ -139,6 +139,8 @@ TEST_F(IoTest, basename) {
 TEST_F(IoTest, findFilesWithPrefix) {
     auto vec = cb::io::findFilesWithPrefix("fs");
     EXPECT_EQ(1u, vec.size());
+	
+	std::cout << "vec[0] = " << vec[0] << std::endl;
 
     EXPECT_NE(vec.end(), std::find(vec.begin(), vec.end(),
                                    "." PATH_SEPARATOR "fs"));
@@ -226,20 +228,7 @@ TEST_F(IoTest, getcwd) {
 }
 
 #ifdef WIN32
-TEST_F(IoTest, mkdirp_longpaths){
-	#ifdef _UNICODE
-	std::cout << " _unicode true " << std::endl;
-	#endif	
-
-        #ifdef UNICODE
-	std::cout << " unicode true " << std::endl;
-	#endif	
-	
-	#pragma message("_MSC_VER      is " _CRT_STRINGIZE(_MSC_VER))
-        #pragma message("stat      is " _CRT_STRINGIZE(stat))
-        #pragma message("CreateFile      is " _CRT_STRINGIZE(CreateFile))
-        #pragma message("GetFileAttributes      is " _CRT_STRINGIZE(GetFileAttributes))
-
+TEST_F(IoTest, longpaths){
 	std::string path = "a";
 	for(int i =0 ; i < 4; i++) {
 		path += PATH_SEPARATOR + std::string(100, 'a');
@@ -257,40 +246,39 @@ TEST_F(IoTest, mkdirp_longpaths){
 	
 
 	// mkdirp
-	EXPECT_THROW(cb::io::mkdirp(path), std::runtime_error);
-	EXPECT_NO_THROW(cb::io::mkdirp(longPath));
+	EXPECT_NO_THROW(cb::io::mkdirp(path));
 
 	// isDirectory
-	EXPECT_FALSE(cb::io::isDirectory(path));
-	EXPECT_TRUE(cb::io::isDirectory(longPath));
+	EXPECT_TRUE(cb::io::isDirectory(path));
 
         // stat call
 	struct stat st;
         std::cout << " stat call path =  " << stat(path.c_str(), &st) << std::endl;
         std::cout << " stat call short path =  " << stat("a", &st) << std::endl;
         std::cout << " stat call longPath =  " << stat(longPath.c_str(), &st) << std::endl;
+		
+		// remove
+		
+		// rmdir
 
-	// create file for further tests
+	// Create file for further tests.
         std::ofstream fileStream(longFilePath);
         ASSERT_FALSE(fileStream.fail());
         fileStream.close();
         ASSERT_FALSE(fileStream.fail());
 
 	// isFile
-	EXPECT_FALSE(cb::io::isFile(filePath));
-	EXPECT_TRUE(cb::io::isFile(longFilePath));
+	EXPECT_TRUE(cb::io::isFile(filePath));
 
 	// findFilesWithPrefix
         ASSERT_EQ(1, cb::io::findFilesWithPrefix(path, "file").size());
-       // ASSERT_EQ(1, cb::io::findFilesWithPrefix(longPath, "file").size());
 
         // findFilesContaining
         ASSERT_EQ(1, cb::io::findFilesContaining(path, "file").size());
-        //ASSERT_EQ(1, cb::io::findFilesContaining(longPath, "file").size());
+
 
 	// rmrf
-        EXPECT_THROW(cb::io::rmrf(path), std::runtime_error);
-	EXPECT_NO_THROW(cb::io::rmrf(longPath));
+        EXPECT_NO_THROW(cb::io::rmrf(path));
 }
 #endif
 
