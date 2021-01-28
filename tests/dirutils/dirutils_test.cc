@@ -229,56 +229,50 @@ TEST_F(IoTest, getcwd) {
 
 #ifdef WIN32
 TEST_F(IoTest, longpaths){
-	std::string path = "a";
-	for(int i =0 ; i < 4; i++) {
-		path += PATH_SEPARATOR + std::string(100, 'a');
+	const auto testRootDir = "longpaths";
+	std::string dirPath = testRootDir;
+	for(int i = 0 ; i < 4; i++) {
+		dirPath += PATH_SEPARATOR + std::string(100, 'a');
 	}
-	const auto longPath = "\\\\?\\" + boost::filesystem::absolute(path).string();
-	std::cout << "path = " << path << std::endl;
-        std::cout << "long path = " << longPath  << std::endl;
-        const auto filePath = path + PATH_SEPARATOR + "file";
-        const auto longFilePath = longPath + PATH_SEPARATOR + "file";
-	// clean up any previous test runs.	
-        auto testRoot = "\\\\?\\" + boost::filesystem::absolute("a").string();
-        if(cb::io::isDirectory(testRoot)){
-		cb::io::rmrf(testRoot);
-	}
+	const auto prefix = R"(\\?\)";
+	const auto dirPathLong = prefix + boost::filesystem::absolute(dirPath).string();
+	const auto filePath = dirPath + PATH_SEPARATOR + "file";
+	const auto filePathLong = dirPathLong + PATH_SEPARATOR + "file";
 	
+	// Clean up any previous test runs.	
+    if(cb::io::isDirectory(testRootDir)){
+		cb::io::rmrf(testRootDir);
+	}
 
 	// mkdirp
-	EXPECT_NO_THROW(cb::io::mkdirp(path));
+	EXPECT_NO_THROW(cb::io::mkdirp(dirPath));
 
 	// isDirectory
-	EXPECT_TRUE(cb::io::isDirectory(path));
-
-        // stat call
-	struct stat st;
-        std::cout << " stat call path =  " << stat(path.c_str(), &st) << std::endl;
-        std::cout << " stat call short path =  " << stat("a", &st) << std::endl;
-        std::cout << " stat call longPath =  " << stat(longPath.c_str(), &st) << std::endl;
-		
-		// remove
-		
-		// rmdir
+	EXPECT_TRUE(cb::io::isDirectory(dirPath));
 
 	// Create file for further tests.
-        std::ofstream fileStream(longFilePath);
-        ASSERT_FALSE(fileStream.fail());
-        fileStream.close();
-        ASSERT_FALSE(fileStream.fail());
+	std::ofstream fileStream(filePathLong);
+	ASSERT_FALSE(fileStream.fail());
+	fileStream.close();
+	ASSERT_FALSE(fileStream.fail());
 
 	// isFile
 	EXPECT_TRUE(cb::io::isFile(filePath));
 
 	// findFilesWithPrefix
-        ASSERT_EQ(1, cb::io::findFilesWithPrefix(path, "file").size());
+	auto files = cb::io::findFilesWithPrefix(dirPath, "file");
+	ASSERT_EQ(1, files.size());
+	EXPECT_EQ(files[0], filePath);
 
-        // findFilesContaining
-        ASSERT_EQ(1, cb::io::findFilesContaining(path, "file").size());
-
+	// findFilesContaining
+	files = cb::io::findFilesContaining(dirPath, "file");
+	ASSERT_EQ(1, files.size());
+	EXPECT_EQ(files[0], filePath);
 
 	// rmrf
-        EXPECT_NO_THROW(cb::io::rmrf(path));
+    EXPECT_NO_THROW(cb::io::rmrf(testRootDir));
+	EXPECT_FALSE(cb::io::isFile(filePath));
+	EXPECT_FALSE(cb::io::isDirectory(testRootDir));
 }
 #endif
 

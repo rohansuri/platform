@@ -229,6 +229,7 @@ void cb::io::rmrf(const std::string& path) {
 	auto lpath = makeLongPath(path);
 	auto lpathStr = lpath.string();
     struct stat st;
+	std::cout << "rmrf, stat of lpathstr = " << lpathStr << std::endl;
     if (stat(lpathStr.c_str(), &st) == -1) {
         throw std::system_error(errno, std::system_category(),
                                 "cb::io::rmrf: stat of " +
@@ -266,6 +267,7 @@ void cb::io::rmrf(const std::string& path) {
         std::vector<std::string>::iterator ii;
 
         for (ii = vec.begin(); ii != vec.end(); ++ii) {
+			*ii = makeLongPath(*ii).string();
 			std::cout << "ii = " << *ii << std::endl;
             if (stat(ii->c_str(), &st) == -1) {
                 throw std::system_error(errno, std::system_category(),
