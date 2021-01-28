@@ -82,10 +82,8 @@ static std::string split(const std::string& input, bool directory) {
     }
 
     if (directory) {
-		std::cout << " returning dir " << directory << std::endl;
         return dir;
     } else {
-		std::cout << " returning file " << file << std::endl;
         return file;
     }
 }
@@ -106,8 +104,8 @@ std::vector<std::string> cb::io::findFilesWithPrefix(const std::string &dir,
                                                      const std::string &name)
 { 
 	std::vector<std::string> files;
-	auto ldir = makeLongPath(dir);
-    auto match = ldir / (name + "*");
+	auto longDir = makeLongPath(dir);
+    auto match = longDir / (name + "*");
     WIN32_FIND_DATAW FindFileData;
 
     HANDLE hFind = FindFirstFileExW(match.c_str(), FindExInfoStandard,
@@ -172,8 +170,8 @@ std::vector<std::string> cb::io::findFilesContaining(const std::string &dir,
         return {};
     }
     std::vector<std::string> files;
-	auto ldir = makeLongPath(dir);
-    auto match = ldir / ("*" + name + "*");
+	auto longDir = makeLongPath(dir);
+    auto match = longDir / ("*" + name + "*");
     WIN32_FIND_DATAW FindFileData;
 
     HANDLE hFind = FindFirstFileExW(match.c_str(), FindExInfoStandard,
@@ -226,18 +224,17 @@ std::vector<std::string> cb::io::findFilesContaining(const std::string& dir,
 
 DIRUTILS_PUBLIC_API
 void cb::io::rmrf(const std::string& path) {
-	auto lpath = makeLongPath(path);
-	auto lpathStr = lpath.string();
+	auto longPath = makeLongPath(path);
+	auto longPathStr = longPath.string();
     struct stat st;
-	std::cout << "rmrf, stat of lpathstr = " << lpathStr << std::endl;
-    if (stat(lpathStr.c_str(), &st) == -1) {
+    if (stat(longPathStr.c_str(), &st) == -1) {
         throw std::system_error(errno, std::system_category(),
                                 "cb::io::rmrf: stat of " +
                                 path + " failed");
     }
 
     if ((st.st_mode & S_IFDIR) != S_IFDIR) {
-        if (remove(lpathStr.c_str()) != 0) {
+        if (remove(longPathStr.c_str()) != 0) {
             throw std::system_error(errno, std::system_category(),
                                     "cb::io::rmrf: remove of " +
                                     path + " failed");
@@ -245,15 +242,14 @@ void cb::io::rmrf(const std::string& path) {
         return;
     }
 
-    if (rmdir(lpathStr.c_str()) == 0) {
+    if (rmdir(longPathStr.c_str()) == 0) {
         return;
     }
 
     // Ok, this is a directory. Go ahead and delete it recursively
     std::vector<std::string> directories;
     std::vector<std::string> emptyDirectories;
-    directories.push_back(lpathStr);
-	std::cout << "lpathStr = " << lpathStr << std::endl;
+    directories.push_back(longPathStr);
     
 
     // Iterate all the files/directories found in path, when we encounter
@@ -268,7 +264,6 @@ void cb::io::rmrf(const std::string& path) {
 
         for (ii = vec.begin(); ii != vec.end(); ++ii) {
 			*ii = makeLongPath(*ii).string();
-			std::cout << "ii = " << *ii << std::endl;
             if (stat(ii->c_str(), &st) == -1) {
                 throw std::system_error(errno, std::system_category(),
                                         "cb::io::rmrf: stat of file/directory " +
@@ -304,8 +299,8 @@ void cb::io::rmrf(const std::string& path) {
 DIRUTILS_PUBLIC_API
 bool cb::io::isDirectory(const std::string& directory) {
 #ifdef WIN32
-    auto ldir = makeLongPath(directory);
-    DWORD dwAttrib = GetFileAttributesW(ldir.c_str());
+    auto longDir = makeLongPath(directory);
+    DWORD dwAttrib = GetFileAttributesW(longDir.c_str());
     if (dwAttrib == INVALID_FILE_ATTRIBUTES) {
         return false;
     }
@@ -340,8 +335,8 @@ bool cb::io::isFile(const std::string& file) {
 DIRUTILS_PUBLIC_API
 void cb::io::mkdirp(std::string directory) {
     if (!boost::filesystem::is_directory(directory)) {
-		auto ldir = makeLongPath(directory);
-        boost::filesystem::create_directories(ldir.c_str());
+		auto longDir = makeLongPath(directory);
+        boost::filesystem::create_directories(longDir.c_str());
     }
 }
 

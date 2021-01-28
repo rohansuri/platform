@@ -140,8 +140,6 @@ TEST_F(IoTest, findFilesWithPrefix) {
     auto vec = cb::io::findFilesWithPrefix("fs");
     EXPECT_EQ(1u, vec.size());
 	
-	std::cout << "vec[0] = " << vec[0] << std::endl;
-
     EXPECT_NE(vec.end(), std::find(vec.begin(), vec.end(),
                                    "." PATH_SEPARATOR "fs"));
 
